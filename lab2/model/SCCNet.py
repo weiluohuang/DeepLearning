@@ -32,12 +32,12 @@ class SCCNet(nn.Module):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.dropout(x)
-        x = x.permute(0,2, 1, 3)
+        x = x.permute(0, 2, 1, 3)
         x = self.conv2(x) #[32, 20, 1, 427]
         x = self.bn2(x) #[32, 20, 1, 427]
         x = self.square(x) # [32, 20, 1, 427]
         x = self.dropout(x) # [32, 20, 1, 427]     
-        x = x.permute(0,2, 1, 3)
+        x = x.permute(0, 2, 1, 3)
         x = self.pool(x) # [32, 20, 1, 31]
         x = x.flatten(1)   #[32, 620]
         x = self.fc(x) #[32, 4]
