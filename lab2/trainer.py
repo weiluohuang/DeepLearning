@@ -1,10 +1,23 @@
-import sys
-import os
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
 import model.SCCNet as SCCNet
 import Dataloader
 
-SD_train = Dataloader.MIBCI2aDataset('train', 'SD')
-SD_test = Dataloader.MIBCI2aDataset('test', 'SD')
-model1 = SCCNet.SCCNet(Nu=3,C=22,Nc=3,Nt=1)
+SD_trainset = Dataloader.MIBCI2aDataset('train', 'SD')
+trainloader = DataLoader(SD_trainset, batch_size=16,shuffle=True)
 
-print(model1.forward(SD_train))
+model1 = SCCNet.SCCNet()
+n_epochs = 10000
+for epoch in range(1, n_epochs+1):
+    optimizer = optim.Adam(model1.parameters(), lr=0.01, weight_decay=1e-4)
+    criterion = nn.CrossEntropyLoss()
+    model1.train()
+    for batch_idx, (features, labels) in enumerate(trainloader):
+        optimizer.zero_grad()
+        output = model1(features)
+        loss = criterion(output, labels)
+        if not epoch%10:
+            print(loss) 
+        loss.backward()
+        optimizer.step()

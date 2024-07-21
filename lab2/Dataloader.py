@@ -15,10 +15,12 @@ class MIBCI2aDataset(torch.utils.data.Dataset):
         return concatenated_array
 
     def _getFeatures(self, filePath):
-        return self.load_and_concatenate(filePath)
+        features = self.load_and_concatenate(filePath)
+        return torch.from_numpy(features).float()
 
     def _getLabels(self, filePath):
-        return self.load_and_concatenate(filePath)
+        labels = self.load_and_concatenate(filePath)
+        return torch.from_numpy(labels).long()
 
     def __init__(self, mode, experiments):
         assert mode in ['train', 'test', 'finetune']
@@ -40,11 +42,9 @@ class MIBCI2aDataset(torch.utils.data.Dataset):
         if mode == 'finetune':
             self.features = self._getFeatures(filePath='./lab2/dataset/FT/features/')
             self.labels = self._getLabels(filePath='./lab2/dataset/FT/labels/')
-            
+
     def __len__(self):
-        # implement the len method
-        pass
+        return len(self.features)
 
     def __getitem__(self, idx):
-        # implement the getitem method
-        pass
+        return self.features[idx], self.labels[idx]
