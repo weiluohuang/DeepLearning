@@ -11,8 +11,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 SD_trainset = Dataloader.MIBCI2aDataset('finetune', 'LOSO')
 SD_trainloader = DataLoader(SD_trainset, batch_size=64,shuffle=True)
 
-model1 = SCCNet.SCCNet().to(device)
-model1.load_state_dict(torch.load('LOSO56.pth'))
+model1 = SCCNet.SCCNet(Nu=44, Nc=20, Nt=16).to(device)
+model1.load_state_dict(torch.load('LOSO62_442016.pth'))
 
 n_epochs = 10000
 loss_history = []
