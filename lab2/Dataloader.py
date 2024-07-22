@@ -24,7 +24,7 @@ class MIBCI2aDataset(torch.utils.data.Dataset):
 
     def __init__(self, mode, experiments):
         assert mode in ['train', 'test', 'finetune']
-        assert experiments in ['SD', 'LOSO', 'FT']
+        assert experiments in ['SD', 'LOSO']
         if mode == 'train':
             if experiments == 'SD':
                 self.features = self._getFeatures(filePath='./lab2/dataset/SD_train/features/')

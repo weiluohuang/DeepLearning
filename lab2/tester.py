@@ -4,21 +4,18 @@ from torch.utils.data import DataLoader
 import model.SCCNet
 import Dataloader
 import matplotlib.pyplot as plt
-# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-# print(f"Using device: {device}")
-
 # print(torch.version.cuda)
 # print(torch.__version__)
 # print(torch.backends.cudnn.version())
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-SD_testset = Dataloader.MIBCI2aDataset('test', 'SD')
+print(f"Using device: {device}")
+SD_testset = Dataloader.MIBCI2aDataset('test', 'LOSO')
 SD_testloader = DataLoader(SD_testset, batch_size=64, shuffle=False)
 
 model = model.SCCNet.SCCNet().to(device)
 
-model.load_state_dict(torch.load('SD_best.pth'))
+model.load_state_dict(torch.load('FT.pth'))
 model.eval()
 
 criterion = nn.CrossEntropyLoss()
@@ -43,11 +40,3 @@ accuracy = 100 * correct / total
 
 print(f'Test Loss: {avg_loss:.4f}')
 print(f'Test Accuracy: {accuracy:.2f}%')
-
-# plt.figure()
-# plt.title('Test Results')
-# plt.xlabel('Metric')
-# plt.ylabel('Value')
-# plt.bar(['Loss', 'Accuracy'], [avg_loss, accuracy])
-# plt.savefig('test_results.png')
-# plt.show()
