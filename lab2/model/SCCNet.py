@@ -22,8 +22,8 @@ class SCCNet(nn.Module):
         self.bn2 = nn.BatchNorm2d(Nc)
         self.square = SquareLayer()
         self.dropout = nn.Dropout(dropoutRate)
-        self.pool = nn.AvgPool2d((1, 64), stride=(1, 12)) 
-        PooledSize = (timeSample-64)//12 
+        self.pool = nn.AvgPool2d((1, 62), stride=(1, 12)) 
+        PooledSize = (timeSample-Nt+1+1-62)//12+1 #Nt reduce, padding increase
         self.fc = nn.Linear(Nc*PooledSize, numClasses)
         
     def forward(self, x):
