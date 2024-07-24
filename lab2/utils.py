@@ -1,6 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import sys
+print(sys.executable)
+print(torch.version.cuda)
+print(torch.__version__)
+print(torch.backends.cudnn.version())
 
 class SquareLayer(nn.Module):
     def __init__(self):
