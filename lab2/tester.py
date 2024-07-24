@@ -4,9 +4,6 @@ from torch.utils.data import DataLoader
 import model.SCCNet
 import Dataloader
 import matplotlib.pyplot as plt
-# print(torch.version.cuda)
-# print(torch.__version__)
-# print(torch.backends.cudnn.version()
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # print(f"Using device: {device}")
