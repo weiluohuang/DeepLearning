@@ -11,7 +11,7 @@ SD_testset = Dataloader.MIBCI2aDataset('test', 'LOSO')
 SD_testloader = DataLoader(SD_testset, batch_size=64, shuffle=False)
 
 model = model.SCCNet.SCCNet(Nu=22, Nc=20, Nt=16).to(device)
-model.load_state_dict(torch.load('FT72.pth', weights_only= True)) #macos: map_location=torch.device('cpu')
+model.load_state_dict(torch.load('FT72.pth')) #macos: map_location=torch.device('cpu')
 model.eval()
 
 criterion = nn.CrossEntropyLoss()
