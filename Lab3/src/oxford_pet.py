@@ -4,8 +4,12 @@ import shutil
 import numpy as np
 
 from PIL import Image
+import torch.utils
+import torch.utils.data
+import torch.utils.data.dataloader
 from tqdm import tqdm
 from urllib.request import urlretrieve
+from torchvision import transforms
 
 class OxfordPetDataset(torch.utils.data.Dataset):
     def __init__(self, root, mode="train", transform=None):
@@ -128,7 +132,15 @@ def extract_archive(filepath):
     if not os.path.exists(dst_dir):
         shutil.unpack_archive(filepath, extract_dir)
 
-def load_dataset(data_path, mode):
-    # implement the load dataset function here
+def load_dataset(data_path, mode, batch_size, Simple = True):
+    transform = None
+    if Simple:
+        dataset = SimpleOxfordPetDataset(data_path, mode, transform=transform)
+    else:
+        dataset = OxfordPetDataset(data_path, mode, transform=transform)
+    return torch.utils.data.DataLoader(dataset, batch_size, shuffle=(mode == "train"))
 
-    assert False, "Not implemented yet!"
+# loader = load_dataset("./Lab3/dataset/oxford-iiit-pet/", "train", 1, False)
+# for data in enumerate(loader):
+#     print(data)
+#     break
