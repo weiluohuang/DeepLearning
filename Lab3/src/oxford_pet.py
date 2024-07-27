@@ -1,11 +1,8 @@
 import os
-import torch
 import shutil
 import numpy as np
 
 from PIL import Image
-import torch.utils
-import torch.utils.data
 import torch.utils.data.dataloader
 from tqdm import tqdm
 from urllib.request import urlretrieve
@@ -13,7 +10,7 @@ from torchvision import transforms
 
 class OxfordPetDataset(torch.utils.data.Dataset):
     def __init__(self, root, mode="train", transform=None):
-
+        # self.download(root)
         assert mode in {"train", "valid", "test"}
 
         self.root = root
@@ -99,7 +96,7 @@ class SimpleOxfordPetDataset(OxfordPetDataset):
         sample["mask"] = np.expand_dims(mask, 0)
         sample["trimap"] = np.expand_dims(trimap, 0)
 
-        return sample
+        return torch.from_numpy(sample["image"].astype(np.float32)), torch.from_numpy(sample["mask"].astype(np.float32))
 
 
 class TqdmUpTo(tqdm):
@@ -140,7 +137,7 @@ def load_dataset(data_path, mode, batch_size, Simple = True):
         dataset = OxfordPetDataset(data_path, mode, transform=transform)
     return torch.utils.data.DataLoader(dataset, batch_size, shuffle=(mode == "train"))
 
-# loader = load_dataset("./Lab3/dataset/oxford-iiit-pet/", "train", 1, False)
+# loader = load_dataset("./Lab3/dataset/oxford-iiit-pet/", "train", 1, True)
 # for data in enumerate(loader):
-#     print(data)
+#     print(data[1])
 #     break

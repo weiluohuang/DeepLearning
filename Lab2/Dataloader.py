@@ -1,8 +1,9 @@
 import torch
 import numpy as np
 import os
+from torch.utils.data import DataLoader, Dataset
 
-class MIBCI2aDataset(torch.utils.data.Dataset):
+class MIBCI2aDataset(Dataset):
 
     def load_and_concatenate(self, folder_path):
         files = [f for f in os.listdir(folder_path) if f.endswith('.npy')]
@@ -48,3 +49,9 @@ class MIBCI2aDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         return self.features[idx], self.labels[idx]
+    
+# dataset = MIBCI2aDataset("test", "SD")
+# loader = DataLoader(dataset, 1, False)
+# for labels in enumerate(loader):
+#     print(labels)
+#     break
