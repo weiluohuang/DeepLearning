@@ -9,8 +9,10 @@ def crop_and_concat(upsampled, bypass):
 def downsample(in_channels):
     return nn.Sequential(nn.MaxPool2d((2, 2),(2, 2)),
                         nn.Conv2d(in_channels, 2*in_channels, (3, 3), padding=1),
+                        nn.BatchNorm2d(2*in_channels),
                         nn.ReLU(),
                         nn.Conv2d(2*in_channels, 2*in_channels, (3, 3), padding=1),
+                        nn.BatchNorm2d(2*in_channels),
                         nn.ReLU())
 
 class upsample(nn.Module):
@@ -18,16 +20,20 @@ class upsample(nn.Module):
         super(upsample, self).__init__()
         self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, (2, 2), (2, 2))
         self.conv1 = nn.Conv2d(in_channels, in_channels // 2, (3, 3), padding=1)
+        self.bn1 = nn.BatchNorm2d(in_channels // 2)
         self.relu1 = nn.ReLU()
         self.conv2 = nn.Conv2d(in_channels // 2, in_channels // 2, (3, 3), padding=1)
+        self.bn2 = nn.BatchNorm2d(in_channels // 2)
         self.relu2 = nn.ReLU()
 
     def forward(self, x, bypass):
         x = self.up(x)
         x = crop_and_concat(x, bypass)
         x = self.conv1(x)
+        x = self.bn1(x)
         x = self.relu1(x)
         x = self.conv2(x)
+        x = self.bn2(x)
         x = self.relu2(x)
         return x
 
@@ -88,5 +94,5 @@ class UNet(nn.Module):
 # u3 size :  torch.Size([64, 128, 128, 128])
 # u4 size :  torch.Size([64, 64, 256, 256])
 # output size :  torch.Size([64, 1, 256, 256])
-# model = UNet(3, 1)
+# model = UNet(3, 2)
 # model.forward(torch.rand(64, 3, 256, 256))

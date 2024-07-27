@@ -4,47 +4,45 @@ from models import unet #, resnet34_unet
 import oxford_pet
 import torch.optim as optim
 import torch.nn as nn
+import utils
 
 def train(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     trainloader = oxford_pet.load_dataset(args.data_path, "train", args.batch_size)
     
-    model = unet.UNet(3, 1).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=1e-4)
-    criterion = nn.BCEWithLogitsLoss()
+    model = unet.UNet(3, 2).to(device)
+    optimizer = optim.SGD(model.parameters(), lr=args.learning_rate, momentum=0.99)
+    criterion = nn.CrossEntropyLoss()
     
     model.train()
     
+    best_dice = 0.0
     for epoch in range(1, args.epochs + 1):
-        epoch_loss = 0
-        for data in enumerate(trainloader):
-            
-            image, mask = data[1]
+        for i, (image, mask) in enumerate(trainloader):
             image, mask = image.to(device), mask.to(device)
             
             optimizer.zero_grad()
             outputs = model(image)
+            
+            mask = mask.squeeze(1).long()
+            
             loss = criterion(outputs, mask)
             
             loss.backward()
             optimizer.step()
             
-            epoch_loss += loss.item()
+            with torch.no_grad():
+                dice = utils.dice_score(outputs, mask)
             
-        # 計算平均 epoch loss
-        avg_loss = epoch_loss / len(trainloader)
-        
-        print(f"Epoch {epoch}/{args.epochs}, Loss: {avg_loss:.4f}")
-        
-        # 保存最佳模型
-        if avg_loss < lowest_loss:
-            lowest_loss = avg_loss
-            torch.save(model.state_dict(), 'best_unet.pth')
-            print(f"New best model saved with loss: {lowest_loss:.4f}")
-    
-    # 保存最終模型
-    torch.save(model.state_dict(), 'final_unet_model.pth')
-    print("Training completed. Final model saved.")
+            if i is len(trainloader):
+                print(f"Epoch {epoch}/{args.epochs}, Loss: {loss.item():.4f}")
+
+            if dice.item() > best_dice:
+                best_dice = dice.item()
+                torch.save(model.state_dict(), f'./Lab3/saved_models/unet{best_dice*100:.0f}.pth')
+                print(f"New best model saved with Dice score: {best_dice:.3f}")
+
+    print(f"Training completed. Final model saved. Best Dice score: {best_dice:.3f}")
 
 def get_args():
     parser = argparse.ArgumentParser(description='Train the UNet on image and target mask')
@@ -59,4 +57,4 @@ if __name__ == "__main__":
     args = get_args()
     train(args)
 
-# python ./Lab3/src/train.py --data_path ./Lab3/dataset/oxford-iiit-pet/ --epochs 1000 --batch_size 64 --learning-rate 0.01
+# python ./Lab3/src/train.py --data_path ./Lab3/dataset/oxford-iiit-pet/ --epochs 100 --batch_size 16 --learning-rate 1e-1

@@ -135,9 +135,9 @@ def load_dataset(data_path, mode, batch_size, Simple = True):
         dataset = SimpleOxfordPetDataset(data_path, mode, transform=transform)
     else:
         dataset = OxfordPetDataset(data_path, mode, transform=transform)
-    return torch.utils.data.DataLoader(dataset, batch_size, shuffle=(mode == "train"))
+    return torch.utils.data.DataLoader(dataset, batch_size, shuffle=(mode == "train"),num_workers=12)
 
 # loader = load_dataset("./Lab3/dataset/oxford-iiit-pet/", "train", 1, True)
-# for data in enumerate(loader):
-#     print(data[1])
+# for i, (image, mask) in enumerate(loader):
+#     print(mask)
 #     break
