@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import sys
-print(sys.executable)
+
 print(torch.version.cuda)
 print(torch.__version__)
 print(torch.backends.cudnn.version())
@@ -47,7 +45,7 @@ class SCCNet(nn.Module):
         print("After permute:", x.shape)
         
         ##############Second layer####################
-        x = self.conv2(x) #[32, 20, 1, 427]l
+        x = self.conv2(x) #[32, 20, 1, 427]
         print("After conv2:", x.shape)
         x = self.bn2(x) #[32, 20, 1, 427]
         print("After bn2:", x.shape)
