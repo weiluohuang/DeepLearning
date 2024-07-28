@@ -1,11 +1,6 @@
 import torch
 import torch.nn as nn
 
-def crop_and_concat(upsampled, bypass):
-    c = (bypass.size()[2] - upsampled.size()[2]) // 2
-    bypass = bypass[:, :, c:c+upsampled.size()[2], c:c+upsampled.size()[3]]
-    return torch.cat((upsampled, bypass), 1)
-
 class building_block(nn.Module):
     def __init__(self, in_channels, out_channels, downsample=False):
         super(building_block, self).__init__()
@@ -58,70 +53,81 @@ class upsample(nn.Module):
         self.relu2 = nn.ReLU()
 
     def forward(self, x, bypass):
+        if bypass is not None:
+            x = torch.cat((x, bypass), 1)
         x = self.up(x)
-        x = crop_and_concat(x, bypass)
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu1(x)
         x = self.conv2(x)
         x = self.bn2(x)
-        x = self.relu2(x)
-        return x
+        return self.relu2(x)
 
 class ResNet34_UNet(nn.Module):
     def __init__(self):
         super(ResNet34_UNet, self).__init__()
         
-        self.conv1 = building_block(3, 64)
+        self.conv1 = building_block(3, 64, downsample=True)
         self.maxpool = nn.MaxPool2d(2)
         self.conv2 = building_block(64, 64)
-        self.conv3 = building_block(64, 128)
-        self.conv4 = building_block(128, 256)
-        self.conv5 = building_block(256, 512)
+        self.conv3 = building_block(64, 128, downsample=True)
+        self.conv4 = building_block(128, 256, downsample=True)
+        self.conv5 = building_block(256, 512, downsample=True)
+        self.conv6 = building_block(512, 256)
         
-        self.bridge = building_block(512, 256)
-        
-        self.up1 = upsample(256 + 512, 32)
-        self.up2 = upsample(32 + 256, 32)
-        self.up3 = upsample(32 + 128, 32)
-        self.up4 = upsample(32 + 64, 32)
+        self.up1 = upsample(768, 32)
+        self.up2 = upsample(288, 32)
+        self.up3 = upsample(160, 32)
+        self.up4 = upsample(96, 32)
         self.up5 = upsample(32, 32)
         
         self.outc = building_block(32, 2)
 
     def forward(self, x):
-        # Encoder
         x = self.conv1(x)
-        print("e1 size :",x.shape)
+        # print("after conv1 :",x.shape)
         x = self.maxpool(x)
-        print("e2 size :",x.shape)
+        # print("after maxpool :",x.shape)
         x1 = self.conv2(x)
-        print("e3 size :",x1.shape)
+        # print("after conv2 :",x1.shape)
         x2 = self.conv3(x1)
-        print("e4 size :",x2.shape)
+        # print("after conv3 :",x2.shape)
         x3 = self.conv4(x2)
-        print("e5 size :",x3.shape)
+        # print("after conv4 :",x3.shape)
         x4 = self.conv5(x3)
-        print("e6 size :",x4.shape)
-        
-        x = self.bridge(x4)
-        print("m size :",x.shape)
+        # print("after conv5 :",x4.shape)
+        x = self.conv6(x4)
+        # print("after conv6 :",x.shape)
         
         # Decoder
-        x = self.up1(x, x3)
-        print("d1 size :",x.shape)
-        x = self.up2(x, x2)
-        print("d2 size :",x.shape)
-        x = self.up3(x, x1)
-        print("d3 size :",x.shape)
-        x = self.up4(x, None)
-        print("d4 size :",x.shape)
+        x = self.up1(x, x4)
+        # print("after up1 :",x.shape)
+        x = self.up2(x, x3)
+        # print("after up2 :",x.shape)
+        x = self.up3(x, x2)
+        # print("after up3 :",x.shape)
+        x = self.up4(x, x1)
+        # print("after up4 :",x.shape)
         x = self.up5(x, None)
-        print("d5 size :",x.shape)
+        # print("after up5 :",x.shape)
         
         x = self.outc(x)
-        print("output size :",x.shape)
+        # print("output size :",x.shape)
         return x
 
-model = ResNet34_UNet()
-model.forward(torch.rand(64, 3, 256, 256))
+# model = ResNet34_UNet()
+# model.forward(torch.rand(64, 3, 256, 256))
+
+# after conv1 : torch.Size([64, 64, 128, 128])
+# after maxpool : torch.Size([64, 64, 64, 64])
+# after conv2 : torch.Size([64, 64, 64, 64])
+# after conv3 : torch.Size([64, 128, 32, 32])
+# after conv4 : torch.Size([64, 256, 16, 16])
+# after conv5 : torch.Size([64, 512, 8, 8])
+# after conv6 : torch.Size([64, 256, 8, 8])
+# after up1 : torch.Size([64, 32, 16, 16])
+# after up2 : torch.Size([64, 32, 32, 32])
+# after up3 : torch.Size([64, 32, 64, 64])
+# after up4 : torch.Size([64, 32, 128, 128])
+# after up5 : torch.Size([64, 32, 256, 256])
+# output size : torch.Size([64, 2, 256, 256])
