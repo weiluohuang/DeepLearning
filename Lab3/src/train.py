@@ -15,7 +15,8 @@ def train(args):
     valloader = oxford_pet.load_dataset(args.data_path, "valid", args.batch_size)
     
     model = resnet34_unet.ResNet34_UNet().to(device)
-    optimizer = optim.SGD(model.parameters(), lr=args.learning_rate, momentum=0.99)
+    # optimizer = optim.SGD(model.parameters(), lr=args.learning_rate, momentum=0.99)
+    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     criterion = nn.CrossEntropyLoss()
     
     train_accuracies = []
@@ -81,4 +82,4 @@ if __name__ == "__main__":
     args = get_args()
     train(args)
 
-# python ./Lab3/src/train.py --data_path ./Lab3/dataset/oxford-iiit-pet/ --epochs 300 --batch_size 8 --learning-rate 1e-2
+# python ./Lab3/src/train.py --data_path ./Lab3/dataset/oxford-iiit-pet/ --epochs 150 --batch_size 8 --learning-rate 1e-2

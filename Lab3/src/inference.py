@@ -17,10 +17,11 @@ if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    if args.model is './Lab3/saved_models/UNet.pth':
+    if args.model == './Lab3/saved_models/UNet.pth':
         model = unet.UNet(3, 2).to(device)
     else:
-       model = resnet34_unet.ResNet34_UNet().to(device)
+        model = resnet34_unet.ResNet34_UNet().to(device)
+
     model.load_state_dict(torch.load(args.model, map_location=device))
     test_loader = oxford_pet.load_dataset(args.data_path, "test", args.batch_size)
     loss_score, dice_score, accuracy_score = evaluate.evaluate(model, test_loader, device)
@@ -28,4 +29,4 @@ if __name__ == '__main__':
     print(f"Test Dice Score: {dice_score:.4f}")
     print(f"Test Accuracy: {accuracy_score:.4f}")
 
-    # python ./Lab3/src/inference.py --model ./Lab3/saved_models/unet62.pth --data_path ./Lab3/dataset/oxford-iiit-pet/ --batch_size 1
+    # python ./Lab3/src/inference.py --data_path ./Lab3/dataset/oxford-iiit-pet/ --batch_size 8 --model ./Lab3/saved_models/ResNet34_UNet.pth
