@@ -2,6 +2,8 @@ import torch
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+from models import unet, resnet34_unet
+import oxford_pet
 
 def visualize_predictions(model, dataloader, device, num_samples):
     model.eval()
@@ -26,7 +28,7 @@ def visualize_predictions(model, dataloader, device, num_samples):
             image = (image - image.min()) / (image.max() - image.min())
             
             # Create a figure with subplots
-            fig, axs = plt.subplots(1, 3, figsize=(15, 6))
+            fig, axs = plt.subplots(1, 3, figsize=(7, 3))
             
             # Plot original image
             axs[0].imshow(image)
@@ -99,4 +101,11 @@ def accuracy_score(pred, target):
     correct = (pred == target).float()
     return correct.sum() / correct.numel()
 
-# plot_comparison('UNet_history.json', 'ResNet34_UNet_history.json', 'UNet', 'ResNet34-UNet')
+if __name__ == "__main__":
+    # plot_comparison('UNet_history.json', 'ResNet34_UNet_history.json', 'UNet', 'ResNet34-UNet')
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = unet.UNet(3, 2)
+    model.load_state_dict(torch.load("./Lab3/UNet_93.pth", map_location=device))
+    loader = oxford_pet.load_dataset("./Lab3/dataset/oxford-iiit-pet/", "test", 1)
+    visualize_predictions(model, loader, device, 10)
