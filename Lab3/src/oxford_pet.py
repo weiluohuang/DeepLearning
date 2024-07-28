@@ -11,7 +11,7 @@ from torchvision import transforms
 class OxfordPetDataset(torch.utils.data.Dataset):
     def __init__(self, root, mode="train", transform=None):
         # self.download(root)
-        assert mode in {"train", "valid", "test"}
+        assert mode in {"train", "valid", "test", "all"}
 
         self.root = root
         self.mode = mode
@@ -59,6 +59,8 @@ class OxfordPetDataset(torch.utils.data.Dataset):
             filenames = [x for i, x in enumerate(filenames) if i % 10 != 0]
         elif self.mode == "valid":  # 10% for validation
             filenames = [x for i, x in enumerate(filenames) if i % 10 == 0]
+        elif self.mode == "all":
+            filenames = [x for i, x in enumerate(filenames)]
         return filenames
 
     @staticmethod

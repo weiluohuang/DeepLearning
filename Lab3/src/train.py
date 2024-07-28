@@ -1,24 +1,31 @@
 import torch
 import argparse
-from models import unet #, resnet34_unet
+from models import unet
 import oxford_pet
 import torch.optim as optim
 import torch.nn as nn
 import utils
+from tqdm import tqdm
+from evaluate import evaluate
+import json
 
 def train(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     trainloader = oxford_pet.load_dataset(args.data_path, "train", args.batch_size)
+    valloader = oxford_pet.load_dataset(args.data_path, "valid", args.batch_size)
     
     model = unet.UNet(3, 2).to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.learning_rate, momentum=0.99)
     criterion = nn.CrossEntropyLoss()
     
-    model.train()
+    train_accuracies = []
+    val_accuracies = []
     
-    best_dice = 0.0
+    best_accuracy = 0.0
     for epoch in range(1, args.epochs + 1):
-        for i, (image, mask) in enumerate(trainloader):
+        model.train()
+        epoch_accuracy = 0
+        for i, (image, mask) in enumerate(tqdm(trainloader, desc=f"Epoch {epoch}/{args.epochs}")):
             image, mask = image.to(device), mask.to(device)
             
             optimizer.zero_grad()
@@ -27,23 +34,40 @@ def train(args):
             mask = mask.squeeze(1).long()
             
             loss = criterion(outputs, mask)
-            
             loss.backward()
             optimizer.step()
             
             with torch.no_grad():
-                dice = utils.dice_score(outputs, mask)
+                accuracy = utils.accuracy_score(outputs, mask)
             
-            if i is len(trainloader):
-                print(f"Epoch {epoch}/{args.epochs}, Loss: {loss.item():.4f}")
+            epoch_accuracy += accuracy.item()
 
-            if dice.item() > best_dice:
-                best_dice = dice.item()
-                torch.save(model.state_dict(), f'./Lab3/saved_models/unet{best_dice*100:.0f}.pth')
-                print(f"New best model saved with Dice score: {best_dice:.3f}")
+        avg_accuracy = epoch_accuracy / len(trainloader)
+        
+        train_accuracies.append(avg_accuracy)
+        
+        # Validation phase
+        _, _, val_accuracy = evaluate(model, valloader, device)
+        val_accuracies.append(val_accuracy)
+        
+        print(f"Epoch {epoch}/{args.epochs}, Train Accuracy: {avg_accuracy:.3f}, Val Accuracy: {val_accuracy:.3f}")
 
-    print(f"Training completed. Final model saved. Best Dice score: {best_dice:.3f}")
+        if val_accuracy > best_accuracy:
+            best_accuracy = val_accuracy
+            torch.save(model.state_dict(), f'./Lab3/saved_models/UNet_{int(best_accuracy*100)}.pth')
+            print(f"New best model saved with Accuracy: {best_accuracy:.3f}")
 
+    print(f"Training completed. Best Accuracy: {best_accuracy:.3f}")
+    
+    # Save training history
+    history = {
+        'train_accuracy': train_accuracies,
+        'val_accuracy': val_accuracies
+    }
+    
+    with open(f'UNet_history.json', 'w') as f:
+        json.dump(history, f)
+    
 def get_args():
     parser = argparse.ArgumentParser(description='Train the UNet on image and target mask')
     parser.add_argument('--data_path', type=str, help='path of the input data')
@@ -57,4 +81,4 @@ if __name__ == "__main__":
     args = get_args()
     train(args)
 
-# python ./Lab3/src/train.py --data_path ./Lab3/dataset/oxford-iiit-pet/ --epochs 100 --batch_size 16 --learning-rate 1e-1
+# python ./Lab3/src/train.py --data_path ./Lab3/dataset/oxford-iiit-pet/ --epochs 300 --batch_size 8 --learning-rate 1e-2

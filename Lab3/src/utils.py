@@ -13,3 +13,8 @@ def dice_score(pred_mask, gt_mask):
     
     dice = 2. * intersection / union
     return dice.mean()
+
+def accuracy_score(pred, target):
+    pred = torch.argmax(pred, dim=1)
+    correct = (pred == target).float()
+    return correct.sum() / correct.numel()
