@@ -32,13 +32,10 @@ class OxfordPetDataset(torch.utils.data.Dataset):
         mask_path = os.path.join(self.masks_directory, filename + ".png")
 
         image = np.array(Image.open(image_path).convert("RGB"))
-
         trimap = np.array(Image.open(mask_path))
         mask = self._preprocess_mask(trimap)
 
         sample = dict(image=image, mask=mask, trimap=trimap)
-        if self.transform is not None:
-            sample = self.transform(**sample)
 
         return sample
 
@@ -83,18 +80,27 @@ class OxfordPetDataset(torch.utils.data.Dataset):
 
 class SimpleOxfordPetDataset(OxfordPetDataset):
     def __getitem__(self, *args, **kwargs):
-
         sample = super().__getitem__(*args, **kwargs)
 
-        # resize images
-        image = np.array(Image.fromarray(sample["image"]).resize((256, 256), Image.BILINEAR))
-        mask = np.array(Image.fromarray(sample["mask"]).resize((256, 256), Image.NEAREST))
-        trimap = np.array(Image.fromarray(sample["trimap"]).resize((256, 256), Image.NEAREST))
+        image = Image.fromarray(sample["image"])
+        mask = Image.fromarray(sample["mask"])
+
+        if self.transform is not None:
+            seed = torch.randint(0, 2**32, (1,)).item()
+            torch.manual_seed(seed)
+            image = self.transform(image)
+            torch.manual_seed(seed)
+            mask = self.transform(mask)
+
+        image = image.resize((256, 256), Image.BILINEAR)
+        mask = mask.resize((256, 256), Image.NEAREST)
+
+        image = np.array(image)
+        mask = np.array(mask)
 
         # convert to other format HWC -> CHW
         sample["image"] = np.moveaxis(image, -1, 0)
         sample["mask"] = np.expand_dims(mask, 0)
-        sample["trimap"] = np.expand_dims(trimap, 0)
 
         return torch.from_numpy(sample["image"].astype(np.float32)), torch.from_numpy(sample["mask"].astype(np.float32))
 
@@ -129,15 +135,16 @@ def extract_archive(filepath):
     if not os.path.exists(dst_dir):
         shutil.unpack_archive(filepath, extract_dir)
 
-def load_dataset(data_path, mode, batch_size, Simple = True):
-    transform = None
-    if Simple:
+def load_dataset(data_path, mode, batch_size, preprocess = False):
+    transform = transforms.Compose([transforms.RandomHorizontalFlip(),transforms.RandomRotation(90)])
+
+    if preprocess:
         dataset = SimpleOxfordPetDataset(data_path, mode, transform=transform)
     else:
-        dataset = OxfordPetDataset(data_path, mode, transform=transform)
-    return torch.utils.data.DataLoader(dataset, batch_size, shuffle=(mode == "train"),num_workers=12)
+        dataset = SimpleOxfordPetDataset(data_path, mode, transform=None)
+    return torch.utils.data.DataLoader(dataset, batch_size, shuffle=(mode == "train"), num_workers=2)
 
 # loader = load_dataset("./Lab3/dataset/oxford-iiit-pet/", "train", 1, True)
 # for i, (image, mask) in enumerate(loader):
-#     print(mask)
+#     print(image)
 #     break
