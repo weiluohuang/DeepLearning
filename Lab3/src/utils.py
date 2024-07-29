@@ -44,19 +44,27 @@ def visualize_predictions(model, dataloader, device, num_samples):
             plt.savefig(f'./Lab3/visual/segmentation_visualization_{i}.png')
             plt.close()
 
-def plot_comparison(model1_history, model2_history, model1_name, model2_name):
+def plot_comparison(model1_history, model2_history, model3_history, model4_history, model1_name, model2_name, model3_name, model4_name):
     with open(model1_history, 'r') as f:
         history1 = json.load(f)
     
     with open(model2_history, 'r') as f:
         history2 = json.load(f)
 
+    with open(model3_history, 'r') as f:
+        history3 = json.load(f)
+
+    with open(model4_history, 'r') as f:
+        history4 = json.load(f)
+    
     plt.figure(figsize=(12,5))
     
     # Plot training accuracies
     plt.subplot(1, 2, 1)
     plt.plot(history1['train_accuracy'], label=model1_name)
     plt.plot(history2['train_accuracy'], label=model2_name)
+    plt.plot(history3['train_accuracy'], label=model3_name)
+    plt.plot(history4['train_accuracy'], label=model4_name)
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.title('Training Accuracy')
@@ -66,6 +74,8 @@ def plot_comparison(model1_history, model2_history, model1_name, model2_name):
     plt.subplot(1, 2, 2)
     plt.plot(history1['val_accuracy'], label=model1_name)
     plt.plot(history2['val_accuracy'], label=model2_name)
+    plt.plot(history3['val_accuracy'], label=model3_name)
+    plt.plot(history4['val_accuracy'], label=model4_name)
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.title('Validation Accuracy')
@@ -95,7 +105,7 @@ def accuracy_score(pred, target):
     return correct.sum() / correct.numel()
 
 if __name__ == "__main__":
-    plot_comparison('UNet_history.json', 'ResNet34_UNet_history.json', 'UNet', 'ResNet34-UNet')
+    plot_comparison('UNet_SGD.json', 'UNet_Adam.json', 'Res_SGD.json', 'Res_Adam.json', 'UNet_SGD', 'UNet_Adam', 'ResNet34-UNet_SGD', 'ResNet34-UNet_Adam')
 
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # model = unet.UNet(3, 2).to(device)
