@@ -10,8 +10,8 @@ def visualize_predictions(model, dataloader, device, num_samples):
     
     with torch.no_grad():
         for i, (image, true_mask) in enumerate(dataloader):
-            # if i >= num_samples:
-            #     break
+            if i >= num_samples:
+                break
             
             image, true_mask = image.to(device), true_mask.to(device)
             
