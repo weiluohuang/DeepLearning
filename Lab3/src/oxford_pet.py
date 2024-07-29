@@ -35,7 +35,7 @@ class OxfordPetDataset(torch.utils.data.Dataset):
         trimap = np.array(Image.open(mask_path))
         mask = self._preprocess_mask(trimap)
 
-        sample = dict(image=image, mask=mask, trimap=trimap)
+        sample = dict(image=image, mask=mask)
 
         return sample
 
@@ -142,7 +142,7 @@ def load_dataset(data_path, mode, batch_size, preprocess = False):
         dataset = SimpleOxfordPetDataset(data_path, mode, transform=transform)
     else:
         dataset = SimpleOxfordPetDataset(data_path, mode, transform=None)
-    return torch.utils.data.DataLoader(dataset, batch_size, shuffle=(mode == "train"), num_workers=2)
+    return torch.utils.data.DataLoader(dataset, batch_size, shuffle=(mode == "train"), num_workers=1)
 
 # loader = load_dataset("./Lab3/dataset/oxford-iiit-pet/", "train", 1, True)
 # for i, (image, mask) in enumerate(loader):

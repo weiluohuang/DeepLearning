@@ -12,12 +12,12 @@ import json
 def train(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     trainloader = oxford_pet.load_dataset(args.data_path, "train", args.batch_size, preprocess=True)
-    valloader = oxford_pet.load_dataset(args.data_path, "valid", args.batch_size, preprocess=True)
+    valloader = oxford_pet.load_dataset(args.data_path, "valid", args.batch_size, preprocess=False)
     
-    # model = unet.UNet(3, 2).to(device)
-    model = resnet34_unet.ResNet34_UNet().to(device)
-    # optimizer = optim.SGD(model.parameters(), lr=args.learning_rate, momentum=0.99)
-    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+    model = unet.UNet(3, 2).to(device)
+    # model = resnet34_unet.ResNet34_UNet().to(device)
+    optimizer = optim.SGD(model.parameters(), lr=args.learning_rate, momentum=0.9)
+    # optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     criterion = nn.CrossEntropyLoss()
     
     train_accuracies = []
@@ -56,7 +56,7 @@ def train(args):
 
         if val_accuracy > best_accuracy:
             best_accuracy = val_accuracy
-            torch.save(model.state_dict(), f'./Lab3/saved_models/ResNet34_UNet_{int(best_accuracy*100)}.pth')
+            torch.save(model.state_dict(), f'./Lab3/saved_models/UNet_{int(best_accuracy*100)}.pth')
             print(f"New best model saved with Accuracy: {best_accuracy:.3f}")
 
     print(f"Training completed. Best Accuracy: {best_accuracy:.3f}")
@@ -67,7 +67,7 @@ def train(args):
         'val_accuracy': val_accuracies
     }
     
-    with open(f'ResNet34_UNet_history.json', 'w') as f:
+    with open(f'UNet_history.json', 'w') as f:
         json.dump(history, f)
     
 def get_args():
