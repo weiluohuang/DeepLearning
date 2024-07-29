@@ -48,7 +48,6 @@ def train(args):
         
         train_accuracies.append(avg_accuracy)
         
-        # Validation phase
         _, _, val_accuracy = evaluate(model, valloader, device)
         val_accuracies.append(val_accuracy)
         
@@ -61,7 +60,6 @@ def train(args):
 
     print(f"Training completed. Best Accuracy: {best_accuracy:.3f}")
     
-    # Save training history
     history = {
         'train_accuracy': train_accuracies,
         'val_accuracy': val_accuracies

@@ -10,8 +10,8 @@ def visualize_predictions(model, dataloader, device, num_samples):
     
     with torch.no_grad():
         for i, (image, true_mask) in enumerate(dataloader):
-            if i >= num_samples:
-                break
+            # if i >= num_samples:
+            #     break
             
             image, true_mask = image.to(device), true_mask.to(device)
             
@@ -59,7 +59,6 @@ def plot_comparison(model1_history, model2_history, model3_history, model4_histo
     
     plt.figure(figsize=(12,5))
     
-    # Plot training accuracies
     plt.subplot(1, 2, 1)
     plt.plot(history1['train_accuracy'], label=model1_name)
     plt.plot(history2['train_accuracy'], label=model2_name)
@@ -70,7 +69,6 @@ def plot_comparison(model1_history, model2_history, model3_history, model4_histo
     plt.title('Training Accuracy')
     plt.legend()
 
-    # Plot validation accuracies
     plt.subplot(1, 2, 2)
     plt.plot(history1['val_accuracy'], label=model1_name)
     plt.plot(history2['val_accuracy'], label=model2_name)
@@ -105,10 +103,11 @@ def accuracy_score(pred, target):
     return correct.sum() / correct.numel()
 
 if __name__ == "__main__":
-    plot_comparison('UNet_SGD.json', 'UNet_Adam.json', 'Res_SGD.json', 'Res_Adam.json', 'UNet_SGD', 'UNet_Adam', 'ResNet34-UNet_SGD', 'ResNet34-UNet_Adam')
+    # plot_comparison('UNet_SGD.json', 'UNet_pre.json', 'Res_SGD.json', 'Res_pre.json',
+    #                 'UNet_SGD', 'UNet_pre', 'ResNet34-UNet_SGD', 'ResNet34-UNet_pre')
 
-    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # model = unet.UNet(3, 2).to(device)
-    # model.load_state_dict(torch.load("./Lab3/saved_models/UNet.pth", map_location=device))
-    # loader = oxford_pet.load_dataset("./Lab3/dataset/oxford-iiit-pet/", "test", 1)
-    # visualize_predictions(model, loader, device, 10)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = unet.UNet(3, 2).to(device)
+    model.load_state_dict(torch.load("./Lab3/saved_models/UNet.pth", map_location=device))
+    loader = oxford_pet.load_dataset("./Lab3/dataset/oxford-iiit-pet/", "test", 1)
+    visualize_predictions(model, loader, device, 10)
