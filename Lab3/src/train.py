@@ -14,10 +14,13 @@ def train(args):
     trainloader = oxford_pet.load_dataset(args.data_path, "train", args.batch_size, preprocess=True)
     valloader = oxford_pet.load_dataset(args.data_path, "valid", args.batch_size, preprocess=False)
     
-    model = unet.UNet(3, 2).to(device)
-    # model = resnet34_unet.ResNet34_UNet().to(device)
-    optimizer = optim.SGD(model.parameters(), lr=args.learning_rate, momentum=0.9)
-    # optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+    if args.model == 'UNet':
+        model = unet.UNet(3, 2).to(device)
+        optimizer = optim.SGD(model.parameters(), lr=args.learning_rate, momentum=0.9)
+    else:
+        model = resnet34_unet.ResNet34_UNet().to(device)
+        optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+
     criterion = nn.CrossEntropyLoss()
     
     train_accuracies = []
@@ -69,11 +72,12 @@ def train(args):
         json.dump(history, f)
     
 def get_args():
-    parser = argparse.ArgumentParser(description='Train the UNet on image and target mask')
+    parser = argparse.ArgumentParser(description='Train the model on image and target mask')
     parser.add_argument('--data_path', type=str, help='path of the input data')
     parser.add_argument('--epochs', '-e', type=int, default=5, help='number of epochs')
     parser.add_argument('--batch_size', '-b', type=int, default=1, help='batch size')
     parser.add_argument('--learning-rate', '-lr', type=float, default=1e-5, help='learning rate')
+    parser.add_argument('--model', type=str, default='UNet', help='train which model')
 
     return parser.parse_args()
 
@@ -81,4 +85,4 @@ if __name__ == "__main__":
     args = get_args()
     train(args)
 
-# python ./Lab3/src/train.py --data_path ./Lab3/dataset/oxford-iiit-pet/ --epochs 150 --batch_size 8 --learning-rate 1e-2
+# python ./Lab3/src/train.py --data_path ./Lab3/dataset/oxford-iiit-pet/ --epochs 150 --batch_size 8 --learning-rate 1e-2 --model UNet
