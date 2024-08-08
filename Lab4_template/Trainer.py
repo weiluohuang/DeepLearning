@@ -122,8 +122,35 @@ class VAE_Model(nn.Module):
             self.tqdm_bar('val', pbar, loss.detach().cpu(), lr=self.scheduler.get_last_lr()[0])
     
     def training_one_step(self, img, label, adapt_TeacherForcing):
-        # TODO
-        raise NotImplementedError
+        img = img.permute(1, 0, 2, 3, 4) # [T, B, C, H, W]
+        label = label.permute(1, 0, 2, 3, 4)
+        output = img[0]
+
+        MSE_loss = 0.0
+        kl_loss = 0.0
+        for i in range(1, self.train_vi_len):
+            if adapt_TeacherForcing:
+                output = img[i-1]
+                # output = img[i-1] * self.tfr + output * (1 - self.tfr)
+            
+            label_feature = self.label_transformation(label[i])
+            frame_feature = self.frame_transformation(output)
+            
+            z, mu, logvar = self.Gaussian_Predictor(frame_feature, label_feature)
+            
+            output = self.Generator(self.Decoder_Fusion(frame_feature, label_feature, z))
+
+            MSE_loss += self.mse_criterion(output, img[i])
+            kl_loss += kl_criterion(mu, logvar, batch_size = self.batch_size)
+
+        beta = torch.tensor(self.kl_annealing.get_beta()).to(self.args.device)
+        loss = MSE_loss + beta * kl_loss
+        
+        self.optim.zero_grad()
+        loss.backward()
+        self.optimizer_step()
+
+        return loss
     
     def val_one_step(self, img, label):
         # TODO
