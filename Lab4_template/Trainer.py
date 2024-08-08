@@ -153,8 +153,27 @@ class VAE_Model(nn.Module):
         return loss
     
     def val_one_step(self, img, label):
-        # TODO
-        raise NotImplementedError
+        img = img.permute(1, 0, 2, 3, 4)
+        label = label.permute(1, 0, 2, 3, 4)
+        decoded_frame_list = [img[0].cpu()]
+        output = img[0]
+
+        MSE_loss = 0.0
+        kl_loss = 0.0
+        for i in range(1, self.val_vi_len):
+            label_feat = self.label_transformation(label[i])
+            frame_feature = self.frame_transformation(output)
+            
+            z = torch.cuda.FloatTensor(1, self.args.N_dim, self.args.frame_H, self.args.frame_W).normal_()
+              
+            output = self.Generator(self.Decoder_Fusion(frame_feature, label_feat, z))
+            decoded_frame_list.append(output.cpu())
+            MSE_loss += self.mse_criterion(output, img[i])
+        
+        generated_frame = stack(decoded_frame_list).permute(1, 0, 2, 3, 4)
+        self.make_gif(generated_frame[0], os.path.join(self.args.save_root, f'{self.args.kl_anneal_type}.gif'))
+
+        return MSE_loss
                 
     def make_gif(self, images_list, img_name):
         new_list = []
