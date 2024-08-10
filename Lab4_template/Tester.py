@@ -29,7 +29,7 @@ TA_ = """
 def get_key(fp):
     filename = fp.split('/')[-1]
     filename = filename.split('.')[0].replace('frame', '')
-    return int(filename)
+    return int(''.join(filter(str.isdigit, filename)))
 
 from torch.utils.data import DataLoader
 from glob import glob
@@ -44,7 +44,7 @@ class Dataset_Dance(torchData):
         self.img_folder = []
         self.label_folder = []
         
-        data_num = len(glob('./Demo_Test/*'))
+        data_num = len(glob('./LAB4_Dataset/test/test_img/*'))
         for i in range(data_num):
             self.img_folder.append(sorted(glob(os.path.join(root , f'test/test_img/{i}/*')), key=get_key))
             self.label_folder.append(sorted(glob(os.path.join(root , f'test/test_label/{i}/*')), key=get_key))
@@ -122,8 +122,17 @@ class Test_model(VAE_Model):
         decoded_frame_list = [img[0].cpu()]
         label_list = []
 
-        # TODO
-        raise NotImplementedError
+        output = img[0]
+
+        for i in range(1, 630):
+            label_feat = self.label_transformation(label[i])
+            frame_feature = self.frame_transformation(output)
+            
+            z = torch.randn(1, self.args.N_dim, self.args.frame_H, self.args.frame_W, device=self.args.device, dtype=torch.float)
+            
+            output = self.Generator(self.Decoder_Fusion(frame_feature, label_feat, z))
+            decoded_frame_list.append(output.cpu())
+            label_list.append(label[i].cpu())
             
         
         # Please do not modify this part, it is used for visulization
@@ -160,10 +169,10 @@ class Test_model(VAE_Model):
                                   shuffle=False)  
         return val_loader
 
-    def load_checkpoint(self):
+    def load_checkpoints(self):
         if self.args.ckpt_path != None:
-            checkpoint = torch.load(self.args.ckpt_path)
-            self.load_state_dict(checkpoint['state_dict'], strict=True) 
+            checkpoints = torch.load(self.args.ckpt_path)
+            self.load_state_dict(checkpoints['state_dict'], strict=True) 
 
 
 
@@ -171,7 +180,7 @@ class Test_model(VAE_Model):
 def main(args):
     os.makedirs(args.save_root, exist_ok=True)
     model = Test_model(args).to(args.device)
-    model.load_checkpoint()
+    model.load_checkpoints()
     model.eval()
 
 
@@ -192,7 +201,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_root',     type=str, required=True,  help="The path to save your data")
     parser.add_argument('--num_workers',   type=int, default=4)
     parser.add_argument('--num_epoch',     type=int, default=70,     help="number of total epoch")
-    parser.add_argument('--per_save',      type=int, default=3,      help="Save checkpoint every seted epoch")
+    parser.add_argument('--per_save',      type=int, default=3,      help="Save checkpoints every seted epoch")
     parser.add_argument('--partial',       type=float, default=1.0,  help="Part of the training dataset to be trained")
     parser.add_argument('--train_vi_len',  type=int, default=16,     help="Training video length")
     parser.add_argument('--val_vi_len',    type=int, default=630,    help="valdation video length")
@@ -228,3 +237,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     main(args)
+
+#python ./Lab4_template/Tester.py --DR ./LAB4_Dataset/ --save_root ./Lab4_template/checkpoints/ --ckpt_path ./Lab4_template/checkpoints/ep56_L261.ckpt

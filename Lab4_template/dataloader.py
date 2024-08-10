@@ -8,9 +8,7 @@ from torch.utils.data import Dataset as torchData
 from torchvision.datasets.folder import default_loader as imgloader
 from torch import stack
 def get_key(fp):
-    filename = fp.split('/')[-1]
-    filename = filename.split('.')[0].replace('frame', '')
-    return int(filename)
+    return int(''.join(filter(str.isdigit, os.path.basename(fp))))
 
 class Dataset_Dance(torchData):
     """
@@ -24,10 +22,10 @@ class Dataset_Dance(torchData):
         super().__init__()
         assert mode in ['train', 'val'], "There is no such mode !!!"
         if mode == 'train':
-            self.img_folder     = sorted(glob(os.path.join(root, 'train/train_img/*.png')), key=get_key)
+            self.img_folder = sorted(glob(os.path.join(root, 'train', 'train_img', '*.png')), key=get_key)
             self.prefix = 'train'
         elif mode == 'val':
-            self.img_folder     = sorted(glob(os.path.join(root, 'val/val_img/*.png')), key=get_key)
+            self.img_folder = sorted(glob(os.path.join(root, 'val', 'val_img', '*.png')), key=get_key)
             self.prefix = 'val'
         else:
             raise NotImplementedError
@@ -35,25 +33,23 @@ class Dataset_Dance(torchData):
         self.transform = transform
         self.partial = partial
         self.video_len = video_len
+        self.root = root
 
     def __len__(self):
         return int(len(self.img_folder) * self.partial) // self.video_len
 
     def __getitem__(self, index):
-        path = self.img_folder[index]
-        
+
         imgs = []
         labels = []
         for i in range(self.video_len):
-            label_list = self.img_folder[(index*self.video_len)+i].split('/')
-            label_list[-2] = self.prefix + '_label'
+            img_name = self.img_folder[index * self.video_len + i]
+            img_name = os.path.normpath(img_name)
             
-            img_name    = self.img_folder[(index*self.video_len)+i]
-            label_name = '/'.join(label_list)
+            label_name = os.path.join(self.root, self.prefix, f'{self.prefix}_label', os.path.basename(img_name))
+            label_name = os.path.normpath(label_name)
 
             imgs.append(self.transform(imgloader(img_name)))
             labels.append(self.transform(imgloader(label_name)))
+        
         return stack(imgs), stack(labels)
-    
-    
-
