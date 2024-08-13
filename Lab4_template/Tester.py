@@ -238,4 +238,5 @@ if __name__ == '__main__':
     
     main(args)
 
-#python ./Lab4_template/Tester.py --DR ./LAB4_Dataset/ --save_root ./Lab4_template/checkpoints/ --ckpt_path ./Lab4_template/checkpoints/ep56_L261.ckpt
+# python ./Lab4_template/Tester.py --DR ./LAB4_Dataset/ --save_root ./Lab4_template/checkpoints/ --ckpt_path ./Lab4_template/checkpoints/ep127L315.ckpt
+# python ./Lab4_template/Trainer.py --DR ./LAB4_Dataset --save_root ./Lab4_template/checkpoints/ --test --ckpt_path ./Lab4_template/checkpoints/ep116L315.ckpt

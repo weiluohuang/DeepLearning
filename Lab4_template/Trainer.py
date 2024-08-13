@@ -71,17 +71,14 @@ class kl_annealing():
     def get_beta(self):
         return self.beta
 
-    def frange_cycle_linear(self, n_iter, start=0.0, stop=1.0,  n_cycle=1, ratio=1):
-        
+    def frange_cycle_linear(self, n_iter, start=0.0, stop=1.0,  n_cycle=1, ratio=1):  
         L = np.ones(n_iter) * stop
         period = n_iter/n_cycle
         step = (stop - start)/(period * ratio)
-        # print("period is ",period," step is ",step)
         for c in range(n_cycle):
             v, i = start, 0
             while v <= stop and (int(i + c * period) < n_iter):
                 L[int(i + c * period)] = v
-                # print("v is",v)
                 v += step
                 i += 1
         return L[0], L
@@ -104,7 +101,7 @@ class VAE_Model(nn.Module):
         self.Generator            = Generator(input_nc=args.D_out_dim, output_nc=3)
         
         self.optim      = optim.Adam(self.parameters(), lr=self.args.lr)
-        self.scheduler  = optim.lr_scheduler.MultiStepLR(self.optim, milestones=[2, 5], gamma=0.1)
+        self.scheduler  = optim.lr_scheduler.MultiStepLR(self.optim, milestones=[], gamma=0.5)
         self.kl_annealing = kl_annealing(args, current_epoch=0)
         self.mse_criterion = nn.MSELoss()
         self.current_epoch = 0
@@ -170,17 +167,17 @@ class VAE_Model(nn.Module):
 
                 beta = self.kl_annealing.get_beta()
                 if adapt_TeacherForcing:
-                    self.tqdm_bar('train [TeacherForcing: ON, {:.1f}], beta: {}'.format(self.tfr, beta), pbar, loss.detach().cpu(), lr=self.scheduler.get_last_lr()[0])
+                    self.tqdm_bar('train [TeacherForcing: ON, {:.1f}], beta: {:.2f}'.format(self.tfr, beta), pbar, loss.detach().cpu(), lr=self.scheduler.get_last_lr()[0])
                 else:
-                    self.tqdm_bar('train [TeacherForcing: OFF, {:.1f}], beta: {}'.format(self.tfr, beta), pbar, loss.detach().cpu(), lr=self.scheduler.get_last_lr()[0])
+                    self.tqdm_bar('train [TeacherForcing: OFF, {:.1f}], beta: {:.2f}'.format(self.tfr, beta), pbar, loss.detach().cpu(), lr=self.scheduler.get_last_lr()[0])
 
             self.train_losses.append(epoch_loss / len(train_loader))
             self.tfr_values.append(self.tfr)
                 
             val_loss = self.eval()
-            self.plot_curves()
+            
             if self.current_epoch % self.args.per_save == 0:
-                self.save(os.path.join(self.args.save_root, f"ep{self.current_epoch}_L{int(val_loss*100)}.ckpt"))
+                self.save(os.path.join(self.args.save_root, f"ep{self.current_epoch}L{int(val_loss*1000)}.ckpt"))
             self.val_losses.append(val_loss)
             self.current_epoch += 1
             self.scheduler.step()
@@ -210,9 +207,9 @@ class VAE_Model(nn.Module):
         MSE_loss = 0.0
         kl_loss = 0.0
         for i in range(1, self.train_vi_len):
-            # if adapt_TeacherForcing:
-            #     output = img[i-1]
-            output = img[i-1] * self.tfr + output * (1 - self.tfr)
+            if adapt_TeacherForcing:
+                output = img[i-1]
+            # output = img[i-1] * self.tfr + output * (1 - self.tfr)
             
             label_feature = self.label_transformation(label[i])
             frame_feature = self.frame_transformation(output)
@@ -253,7 +250,8 @@ class VAE_Model(nn.Module):
         
         generated_frame = stack(decoded_frame_list).permute(1, 0, 2, 3, 4)
         self.make_gif(generated_frame[0], os.path.join(self.args.save_root, f'{self.args.kl_anneal_type}.gif'))
-
+        self.plot_curves()
+        
         return MSE_loss
                 
     def make_gif(self, images_list, img_name):
@@ -302,7 +300,7 @@ class VAE_Model(nn.Module):
             self.tfr = 0
             
     def tqdm_bar(self, mode, pbar, loss, lr):
-        pbar.set_description(f"({mode}) Epoch {self.current_epoch}, lr:{lr}" , refresh=False)
+        pbar.set_description(f"({mode}) Epoch {self.current_epoch}, lr:{lr:.0e}" , refresh=False)
         pbar.set_postfix(loss=float(loss), refresh=False)
         pbar.refresh()
         
@@ -324,9 +322,9 @@ class VAE_Model(nn.Module):
             self.tfr = checkpoints['tfr']
             
             self.optim      = optim.Adam(self.parameters(), lr=self.args.lr)
-            self.scheduler  = optim.lr_scheduler.MultiStepLR(self.optim, milestones=[2, 4], gamma=0.1)
+            self.scheduler  = optim.lr_scheduler.MultiStepLR(self.optim, milestones=[7,14,21], gamma=0.1)
             self.kl_annealing = kl_annealing(self.args, current_epoch=checkpoints['last_epoch'])
-            self.current_epoch = checkpoints['last_epoch']
+            self.current_epoch = checkpoints['last_epoch'] + 1
 
     def optimizer_step(self):
         nn.utils.clip_grad_norm_(self.parameters(), 1.)
@@ -396,4 +394,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     main(args)
-# python ./Lab4_template/Trainer.py --DR ./LAB4_Dataset --save_root ./Lab4_template/checkpoints/ --per_save 1 --num_epoch 200 --kl_anneal_ratio 0.15 --fast_train --kl_anneal_type Monotonic
+
+# python ./Lab4_template/Trainer.py --DR ./LAB4_Dataset --save_root ./Lab4_template/checkpoints/ --per_save 1 --num_epoch 100 --fast_train --fast_partial 0.4 --fast_train_epoch 10 --kl_anneal_cycle 20
+# set gamma=0.2, you can get ep99L840.ckpt
+# python ./Lab4_template/Trainer.py --DR ./LAB4_Dataset --save_root ./Lab4_template/checkpoints/ --per_save 1 --num_epoch 200 --kl_anneal_cycle 40 --ckpt_path ./Lab4_template/checkpoints/ep99L840.ckpt
+# set milestone=[2,4],self.current_epoch = checkpoints['last_epoch'], you can get ep127L315.ckpt
+
+# python ./Lab4_template/Trainer.py --DR ./LAB4_Dataset --save_root ./Lab4_template/checkpoints/ --per_save 1 --num_epoch 200 --kl_anneal_cycle 40 --ckpt_path ./Lab4_template/checkpoints/ep99L840.ckpt
+# self.current_epoch = checkpoints['last_epoch'] + 1
+# milestones=[7,14,21]
