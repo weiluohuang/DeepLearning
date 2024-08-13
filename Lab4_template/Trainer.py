@@ -397,9 +397,7 @@ if __name__ == '__main__':
 
 # python ./Lab4_template/Trainer.py --DR ./LAB4_Dataset --save_root ./Lab4_template/checkpoints/ --per_save 1 --num_epoch 100 --fast_train --fast_partial 0.4 --fast_train_epoch 10 --kl_anneal_cycle 20
 # set gamma=0.2, you can get ep99L840.ckpt
-# python ./Lab4_template/Trainer.py --DR ./LAB4_Dataset --save_root ./Lab4_template/checkpoints/ --per_save 1 --num_epoch 200 --kl_anneal_cycle 40 --ckpt_path ./Lab4_template/checkpoints/ep99L840.ckpt
-# set milestone=[2,4],self.current_epoch = checkpoints['last_epoch'], you can get ep127L315.ckpt
 
 # python ./Lab4_template/Trainer.py --DR ./LAB4_Dataset --save_root ./Lab4_template/checkpoints/ --per_save 1 --num_epoch 200 --kl_anneal_cycle 40 --ckpt_path ./Lab4_template/checkpoints/ep99L840.ckpt
 # self.current_epoch = checkpoints['last_epoch'] + 1
-# milestones=[7,14,21]
+# milestones=[7,14,21] you will get ep125L289.ckpt
