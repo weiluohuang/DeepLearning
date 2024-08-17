@@ -5,8 +5,8 @@
     model_param:
     
       VQ_Configs:
-        VQ_config_path: models/VQGAN/config/VQGAN.yml
-        VQ_CKPT_path: models/VQGAN/checkpoints/VQGAN.pt
+        VQ_config_path: ./lab5/models/VQGAN/config/VQGAN.yml
+        VQ_CKPT_path: ./lab5/models/VQGAN/checkpoints/VQGAN.pt
       
       num_image_tokens: 256
       num_codebook_vectors: 1024

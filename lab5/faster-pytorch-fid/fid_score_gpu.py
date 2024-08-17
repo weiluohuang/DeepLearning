@@ -364,7 +364,7 @@ def main():
 parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 parser.add_argument('--batch-size', type=int, default=50,
                     help='Batch size to use')
-parser.add_argument('--num-workers', type=int,
+parser.add_argument('--num-workers', type=int, default=0,
                     help=('Number of processes to use for data loading. '
                           'Defaults to `min(8, num_cpus)`'))
 parser.add_argument('--device', type=str, default=None,
@@ -382,3 +382,5 @@ parser.add_argument('--gtcsv-path', type=str, default="./test_gt.csv")
 
 if __name__ == '__main__':
     main()
+
+# python ./lab5/faster-pytorch-fid/fid_score_gpu.py --device cuda:0 --predicted-path ./test_results --gtcsv-path ./lab5/faster-pytorch-fid/test_gt.csv
