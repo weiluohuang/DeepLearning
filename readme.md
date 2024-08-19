@@ -11,7 +11,7 @@ Announce 7/23 (Tabc), DEMO 7/30 (Tabc)
 Announce 7/30 (Tabc), DEMO 8/13 (Tabc)
 
 # LAB5 MaskGIT
-Announce 8/6 (Tabc), NO DEMO, DeadLine 8/23(Fri) 11:59 a.m.
+Announce 8/6 (Tabc), NO DEMO
 
 # LAB6 Generative Models
 Announce 8/13 (Tabc), NO DEMO

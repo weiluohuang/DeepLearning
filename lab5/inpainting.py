@@ -115,13 +115,13 @@ if __name__ == '__main__':
     parser.add_argument('--device', type=str, default="cuda", help='Which device the training is on.')#cuda
     parser.add_argument('--batch-size', type=int, default=1, help='Batch size for testing.')
     parser.add_argument('--partial', type=float, default=1.0, help='Number of epochs to train (default: 50)')    
-    parser.add_argument('--num_workers', type=int, default=1, help='Number of worker')
+    parser.add_argument('--num_workers', type=int, default=8, help='Number of worker')
     
     parser.add_argument('--MaskGitConfig', type=str, default='./lab5/config/MaskGit.yml', help='Configurations for MaskGIT')
     
     
 #TODO3 step1-2: modify the path, MVTM parameters
-    parser.add_argument('--load-transformer-ckpt-path', type=str, default='./lab5/transformer_checkpoints/ep6.pt', help='load ckpt')
+    parser.add_argument('--load-transformer-ckpt-path', type=str, default='./lab5/transformer_checkpoints/ep60.pt', help='load ckpt')
     
     #dataset path
     parser.add_argument('--test-maskedimage-path', type=str, default='./lab5_dataset/masked_image', help='Path to testing image dataset.')
@@ -138,7 +138,7 @@ if __name__ == '__main__':
     maskgit = MaskGIT(args, MaskGit_CONFIGS)
 
     i=0
-    for image, mask in tqdm(zip(t.mi_ori, t.mask_ori), total=len(t.mi_ori), desc="Processing", ncols=50):
+    for image, mask in tqdm(zip(t.mi_ori, t.mask_ori), total=len(t.mi_ori), desc="Painting", ncols=50):
         image=image.to(device=args.device)
         mask=mask.to(device=args.device)
         mask_b=t.get_mask_latent(mask)       

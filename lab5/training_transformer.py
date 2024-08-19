@@ -29,15 +29,12 @@ class TrainTransformer:
         total_loss = 0
         for batch in tqdm(train_loader, desc=f"Training, LR:{self.optim.param_groups[0]['lr']:.0e}", ncols=60):
             x = batch.to(self.args.device)
-
             logits, z_indices = self.model(x)
             loss = self.criterion(logits.view(-1, logits.size(-1)), z_indices.view(-1))
             total_loss += loss.item()
             loss.backward()
-            
             self.optim.step()
             self.optim.zero_grad()
-        
         return total_loss / len(train_loader)
 
     def eval_one_epoch(self, val_loader):
@@ -46,13 +43,9 @@ class TrainTransformer:
         with torch.no_grad():
             for batch in tqdm(val_loader, desc="Validating", ncols=50):
                 x = batch.to(self.args.device)
-                
                 logits, z_indices = self.model(x)
-                
                 loss = self.criterion(logits.view(-1, logits.size(-1)), z_indices.view(-1))
-                
-                total_loss += loss.item()
-        
+                total_loss += loss.item() 
         return total_loss / len(val_loader)
 
     def configure_optimizers(self):
