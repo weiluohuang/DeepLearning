@@ -115,19 +115,19 @@ if __name__ == '__main__':
     parser.add_argument('--device', type=str, default="cuda", help='Which device the training is on.')#cuda
     parser.add_argument('--batch-size', type=int, default=1, help='Batch size for testing.')
     parser.add_argument('--partial', type=float, default=1.0, help='Number of epochs to train (default: 50)')    
-    parser.add_argument('--num_workers', type=int, default=8, help='Number of worker')
+    parser.add_argument('--num_workers', type=int, default=0, help='Number of worker')
     
     parser.add_argument('--MaskGitConfig', type=str, default='./lab5/config/MaskGit.yml', help='Configurations for MaskGIT')
     
     
 #TODO3 step1-2: modify the path, MVTM parameters
-    parser.add_argument('--load-transformer-ckpt-path', type=str, default='./lab5/transformer_checkpoints/ep60.pt', help='load ckpt')
+    parser.add_argument('--load-transformer-ckpt-path', type=str, default='./lab5/transformer_checkpoints/ep20.pt', help='load ckpt')
     
     #dataset path
     parser.add_argument('--test-maskedimage-path', type=str, default='./lab5_dataset/masked_image', help='Path to testing image dataset.')
     parser.add_argument('--test-mask-path', type=str, default='./lab5_dataset/mask64', help='Path to testing mask dataset.')
     #MVTM parameter
-    parser.add_argument('--sweet-spot', type=int, default=10, help='sweet spot: the best step in total iteration')
+    parser.add_argument('--sweet-spot', type=int, default=7, help='sweet spot: the best step in total iteration')
     parser.add_argument('--total-iter', type=int, default=20, help='total step for mask scheduling')
     parser.add_argument('--mask-func', type=str, default='cosine', help='mask scheduling function')
 

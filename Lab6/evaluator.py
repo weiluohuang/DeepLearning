@@ -5,7 +5,7 @@ import torchvision.models as models
 '''===============================================================
 1. Title:     
 
-DLP summer 2023 Lab6 classifier
+DLP summer 2024 Lab6 classifier
 
 2. Purpose:
 

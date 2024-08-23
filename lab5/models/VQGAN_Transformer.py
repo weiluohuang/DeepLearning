@@ -132,8 +132,6 @@ class MaskGit(nn.Module):
         mask_bc = mask.clone()
         mask_bc[0, indices_to_unmask] = False
         
-        z_indices_predict = torch.where(mask_bc, z_indices.view(1, 256), z_indices_predict)
-        
         return z_indices_predict, mask_bc
     
 __MODEL_TYPE__ = {

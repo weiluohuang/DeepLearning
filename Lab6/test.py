@@ -1,140 +1,63 @@
+import os
 import torch
-import torch.nn as nn
-import torchvision
-from diffusers import DDPMScheduler, UNet2DModel
-from torch.utils.data import DataLoader
+from torchvision.utils import make_grid
+from diffusers import DDPMScheduler
 from dataloader import get_loader
-from tqdm import tqdm
 import torchvision.transforms as transforms
-from PIL import Image
 from evaluator import evaluation_model
+from train import ClassConditionedUnet
 
-class ClassConditionedUnet(nn.Module):
-    def __init__(self, num_classes=24, class_emb_size=128, 
-        blocks = [0, 1, 1], channels = [1, 2, 2]): #Default setting as tutorial
-        super().__init__()
-        first_channel = class_emb_size//4
-        down_blocks = ["DownBlock2D" if x == 0 else "AttnDownBlock2D" for x in blocks]
-        up_blocks = ["UpBlock2D" if x == 0 else "AttnUpBlock2D" for x in reversed(blocks)]
-        channels = [first_channel * x for x in channels]
-        self.model = UNet2DModel(
-            sample_size = 64,
-            in_channels = 3,
-            out_channels = 3,
-            layers_per_block = 2,
-            block_out_channels = (channels), 
-            down_block_types=(down_blocks),
-            up_block_types=(up_blocks),
-        )
-        self.model.class_embedding = nn.Linear(num_classes, class_emb_size)
+def eva(mode='test'):
+    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+    noise_scheduler = DDPMScheduler(beta_schedule='squaredcos_cap_v2')
 
-    def forward(self, x, t, label):
-        return self.model(x, t, label).sample
+    model = ClassConditionedUnet().to(device)
+    checkpoint = torch.load('./pth/11.pth')
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.eval()
 
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+    evaluator = evaluation_model()
+    os.makedirs("imgs", exist_ok=True)
 
-timesteps = 1000
-ckpt = './pth/18.pth'
+    test_loader = get_loader(mode)
+    img_grid = []
+    accuracys = []
 
-test_loader = get_loader('test')
-new_test_loader = get_loader('new_test')
+    for idx, y in enumerate(test_loader):
+        y = y.to(device)
+        x = torch.randn(1, 3, 64, 64).to(device)
+        process = []
+        for i, t in enumerate(noise_scheduler.timesteps):
 
-noise_scheduler = DDPMScheduler(num_train_timesteps=timesteps, beta_schedule='squaredcos_cap_v2')
+            with torch.no_grad():
+                residual = model(x, t, y.squeeze(1))
 
-model = ClassConditionedUnet(class_emb_size = 512, blocks = [0, 0, 0, 0, 0, 0], channels = [1, 1, 2, 2, 4, 4]).to(device)
-checkpoint = torch.load(ckpt)
-model.load_state_dict(checkpoint['model_state_dict'])
-eval_model = evaluation_model()
+            x = noise_scheduler.step(residual, t, x).prev_sample
+            if i % 100 == 0:
+                process.append((x * 0.5 + 0.5).detach().cpu().squeeze(0))
 
-model.eval()
-
-count = 0
-all_images = []
-accuracys = []
-generating = []
-
-for y in test_loader:
-    y = y.to(device)
-    x = torch.randn(1, 3, 64, 64).to(device)
-    for i, t in tqdm(enumerate(noise_scheduler.timesteps)):
-
-        with torch.no_grad():
-            y = y.squeeze(1)
-            residual = model(x, t, y)
-
-        x = noise_scheduler.step(residual, t, x).prev_sample
-        if count == 0 and i % (timesteps // 10) == 0:
-            generating.append((x * 0.5 + 0.5).detach().cpu().squeeze(0))
-
-    accuracy = eval_model.eval(x, y)
-    accuracys.append(accuracy)
-    print('image', count, ':', accuracy)
-    
-    img = (x * 0.5 + 0.5).detach().cpu().squeeze(0)
-    if count == 0:
-        generating.append(img)
-        tensor_images = torch.stack(generating)
-        row_image = torchvision.utils.make_grid(tensor_images, nrow=len(generating), padding=2)
+        accuracy = evaluator.eval(x, y.squeeze(1))
+        accuracys.append(accuracy)
+        print(idx, " acc: ", accuracy)
+        
+        img = (x * 0.5 + 0.5).detach().cpu().squeeze(0)
+        process.append(img)
+        tensor_images = torch.stack(process)
+        row_image = make_grid(tensor_images, nrow=len(process))
         row_image_pil = transforms.ToPILImage()(row_image)
-        row_image_pil.save('imgs/test_generating.png')
-        row_image = torchvision.utils.make_grid(tensor_images, nrow=len(generating), padding=2, normalize=True)
-        row_image_pil = transforms.ToPILImage()(row_image)
-        row_image_pil.save('imgs/test_generating_normalized.png')
-    
-    all_images.append(img)
+        row_image_pil.save(f'imgs/process_{mode}_{idx}.png')
 
-    #img_pil = transforms.ToPILImage()(img)
-    #img_pil.save(f'imgs/{count}.png')
-    count += 1
-
-grid_image = torchvision.utils.make_grid(all_images, nrow=8, padding=2)
-grid_image_pil = transforms.ToPILImage()(grid_image)
-grid_image_pil.save('imgs/test_result.png')
+        img_grid.append(img)
+    grid_image = make_grid(img_grid, nrow=8)
+    grid_image_pil = transforms.ToPILImage()(grid_image)
+    grid_image_pil.save(f'imgs/grid_{mode}.png')
+    return sum(accuracys)/len(accuracys)
 
 
-
-print('Test Accuracy:')
-print(sum(accuracys)/len(accuracys))
-print()
-
-count = 0
-all_images = []
-accuracys = []
-generating = []
-
-for y in new_test_loader:
-    y = y.to(device)
-    x = torch.randn(1, 3, 64, 64).to(device)
-    for i, t in tqdm(enumerate(noise_scheduler.timesteps)):
-
-        with torch.no_grad():
-            y = y.squeeze(1)
-            residual = model(x, t, y)
-
-        x = noise_scheduler.step(residual, t, x).prev_sample
-        if count == 0 and i % (timesteps // 10) == 0:
-            generating.append(x.detach().cpu().squeeze(0))
-
-    accuracy = eval_model.eval(x, y)
-    accuracys.append(accuracy)
-    print('image', count, ':', accuracy)
-    img = (x * 0.5 + 0.5).detach().cpu().squeeze(0)
-    if count == 0:
-        generating.append(img)
-        tensor_images = torch.stack(generating)
-        row_image = torchvision.utils.make_grid(tensor_images, nrow=len(generating), padding=2)
-        row_image_pil = transforms.ToPILImage()(row_image)
-        row_image_pil.save('imgs/new_test_generating.png')
-        row_image = torchvision.utils.make_grid(tensor_images, nrow=len(generating), padding=2, normalize=True)
-        row_image_pil = transforms.ToPILImage()(row_image)
-        row_image_pil.save('imgs/new_test_generating_normalized.png')
-
-    all_images.append(img)
-    count += 1
-
-grid_image = torchvision.utils.make_grid(all_images, nrow=8, padding=2)
-grid_image_pil = transforms.ToPILImage()(grid_image)
-grid_image_pil.save('imgs/new_test_result.png')
-
-print('New Test Accuracy:')
-print(sum(accuracys)/len(accuracys))
+if __name__ == '__main__':
+    torch.manual_seed(0)
+    torch.cuda.manual_seed_all(0)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    print('Test Accuracy: ', eva('test'))
+    print('New Test Accuracy: ', eva('new_test'))

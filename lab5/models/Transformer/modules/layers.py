@@ -11,7 +11,7 @@ class MultiHeadAttention(nn.Module):
 
         self.qkv = nn.Linear(dim, dim * 3, bias=False)
         self.softmax = nn.Softmax(dim=-1)
-        # self.attn_drop = nn.Dropout(attn_drop)
+        self.attn_drop = nn.Dropout(attn_drop)
         self.out_proj = nn.Linear(dim, dim)
 
     def forward(self, x):
@@ -29,7 +29,7 @@ class MultiHeadAttention(nn.Module):
         
         attn = (q @ k.transpose(-2, -1)) * (self.head_dim ** -0.5)
         attn = self.softmax(attn)           # [B, num_heads, N, N]
-        # attn = self.attn_drop(attn)        # [B, num_heads, N, head_dim]
+        attn = self.attn_drop(attn)        # [B, num_heads, N, head_dim]
         
         return self.out_proj((attn @ v).transpose(1, 2).reshape(B, N, C))
 
